@@ -1,10 +1,16 @@
 defmodule Triton.QueryBuilder do
   def build_query(type, module, value) do
     quote do
-      [
-        { unquote(type), unquote(value) }
-        | Triton.QueryBuilder.query_list(unquote(module))
-      ]
+      existing_query = Triton.QueryBuilder.query_list(unquote(module))
+      existing_type = unquote(type)
+
+      case Keyword.get(existing_query, existing_type) do
+        # Existing query don't exist yet, just use old logic
+        nil -> [ { existing_type, unquote(value)} | existing_query ]
+        existing_value -> 
+          new_value = Keyword.merge(existing_value, unquote(value))
+          Keyword.merge(existing_query, [ {existing_type, new_value} ])
+      end
     end
   end
 
